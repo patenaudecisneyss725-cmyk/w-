@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>辣妹国内商城 - 支付页面</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+      font-size: 24px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #555;
+      font-weight: 500;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 12px 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+    button {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .qr-section {
+      display: none;
+      text-align: center;
+      margin-top: 20px;
+    }
+    .qr-section.active {
+      display: block;
+    }
+    .qr-code {
+      max-width: 280px;
+      margin: 20px auto;
+      border: 3px solid #667eea;
+      border-radius: 15px;
+      padding: 10px;
+    }
+    .qr-code img {
+      width: 100%;
+      height: auto;
+    }
+    .timer {
+      font-size: 18px;
+      color: #e74c3c;
+      font-weight: 600;
+      margin: 15px 0;
+    }
+    .order-info {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .order-info p {
+      margin: 5px 0;
+      color: #555;
+    }
+    .order-info strong {
+      color: #333;
+    }
+    .success-section {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .success-section.active {
+      display: block;
+    }
+    .success-icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+    }
+    .error-msg {
+      color: #e74c3c;
+      text-align: center;
+      margin-top: 10px;
+      display: none;
+    }
+    .refresh-btn {
+      background: #95a5a6;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔥 辣妹国内商城</h1>
+    
+    <!-- 表单部分 -->
+    <form id="orderForm">
+      <div class="form-group">
+        <label>收件人姓名 *</label>
+        <input type="text" id="name" required placeholder="请输入姓名">
+      </div>
+      
+      <div class="form-group">
+        <label>手机号码 *</label>
+        <input type="tel" id="phone" required placeholder="请输入手机号" pattern="[0-9]{11}">
+      </div>
+      
+      <div class="form-group">
+        <label>收货地址 *</label>
+        <textarea id="address" required placeholder="请输入详细收货地址"></textarea>
+      </div>
+      
+      <button type="submit">生成订单并支付</button>
+      <p class="error-msg" id="errorMsg"></p>
+    </form>
+    
+    <!-- 二维码部分 -->
+    <div class="qr-section" id="qrSection">
+      <div class="order-info">
+        <p><strong>订单号：</strong><span id="orderId"></span></p>
+        <p><strong>收件人：</strong><span id="orderName"></span></p>
+        <p><strong>手机号：</strong><span id="orderPhone"></span></p>
+      </div>
+      
+      <div class="qr-code">
+        <img id="qrImage" src="" alt="微信收款码">
+      </div>
+      
+      <p class="timer" id="timer">二维码有效期：20:00</p>
+      <p style="color: #666; font-size: 14px;">请使用微信扫码支付</p>
+      
+      <button onclick="confirmPaid()" style="margin-top: 20px;">✅ 我已支付</button>
+      <button class="refresh-btn" onclick="location.reload()" style="display: none;" id="refreshBtn">🔄 二维码已过期，点击刷新</button>
+    </div>
+    
+    <!-- 成功部分 -->
+    <div class="success-section" id="successSection">
+      <div class="success-icon">🎉</div>
+      <h2>支付成功！</h2>
+      <p style="color: #666; margin-top: 15px;">感谢您的订单，我们会尽快发货</p>
+      <p style="color: #999; margin-top: 10px; font-size: 14px;">订单号：<span id="successOrderId"></span></p>
+    </div>
+  </div>
+
+  <script>
+    let currentOrderId = null;
+    let countdownInterval = null;
+    let qrCodes = [];
+    let currentQrIndex = 0;
+
+    // 加载收款码
+    async function loadQrcodes() {
+      try {
+        const res = await fetch('/api/qrcodes');
+        qrCodes = await res.json();
+        if (qrCodes.length === 0) {
+          showError('暂时无法支付，请稍后再试');
+        }
+      } catch (e) {
+        console.error('加载收款码失败:', e);
+      }
+    }
+
+    // 显示错误
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    // 表单提交
+    document.getElementById('orderForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const name = document.getElementById('name').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const address = document.getElementById('address').value.trim();
+      
+      if (!name || !phone || !address) {
+        showError('请填写完整信息');
+        return;
+      }
+      
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ customer_name: name, customer_phone: phone, customer_address: address })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          showQR(data.order);
+        } else {
+          showError(data.error || '创建订单失败');
+        }
+      } catch (e) {
+        showError('网络错误，请重试');
+      }
+    });
+
+    // 显示二维码
+    function showQR(order) {
+      currentOrderId = order.id;
+      currentQrIndex = order.qr_index;
+      
+      document.getElementById('orderForm').style.display = 'none';
+      document.getElementById('qrSection').classList.add('active');
+      
+      document.getElementById('orderId').textContent = order.id;
+      document.getElementById('orderName').textContent = document.getElementById('name').value;
+      document.getElementById('orderPhone').textContent = document.getElementById('phone').value;
+      
+      updateQRImage();
+      startTimer(order.expires_at);
+    }
+
+    // 更新二维码图片
+    function updateQRImage() {
+      if (qrCodes.length > 0) {
+        const qr = qrCodes[currentQrIndex % qrCodes.length];
+        document.getElementById('qrImage').src = '/uploads/' + qr.filename;
+      }
+    }
+
+    // 倒计时
+    function startTimer(expiresAt) {
+      const timerEl = document.getElementById('timer');
+      const refreshBtn = document.getElementById('refreshBtn');
+      
+      countdownInterval = setInterval(() => {
+        const remaining = expiresAt - Date.now();
+        
+        if (remaining <= 0) {
+          clearInterval(countdownInterval);
+          timerEl.textContent = '❌ 二维码已过期';
+          refreshBtn.style.display = 'block';
+          return;
+        }
+        
+        const minutes = Math.floor(remaining / 60000);
+        const seconds = Math.floor((remaining % 60000) / 1000);
+        timerEl.textContent = `二维码有效期：${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }, 1000);
+    }
+
+    // 确认支付
+    async function confirmPaid() {
+      if (!currentOrderId) return;
+      
+      try {
+        await fetch(`/api/orders/${currentOrderId}/paid`, { method: 'POST' });
+        
+        document.getElementById('qrSection').classList.remove('active');
+        document.getElementById('successSection').classList.add('active');
+        document.getElementById('successOrderId').textContent = currentOrderId;
+        
+        clearInterval(countdownInterval);
+      } catch (e) {
+        alert('确认失败，请重试');
+      }
+    }
+
+    // 页面加载时获取收款码
+    loadQrcodes();
+  </script>
+</body>
+</html>

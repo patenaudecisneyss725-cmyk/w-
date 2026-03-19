@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>二维码管理 - 发卡商城后台</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      background: #f5f6fa;
+      min-height: 100vh;
+    }
+    
+    /* 头部 */
+    .header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      padding: 15px 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 20px; }
+    .header-right { display: flex; gap: 15px; align-items: center; }
+    .header a { color: white; text-decoration: none; font-size: 14px; }
+    .logout-btn {
+      background: #e94560;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    
+    /* 导航 */
+    .nav {
+      background: white;
+      padding: 0 25px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .nav-list {
+      display: flex;
+      gap: 5px;
+      list-style: none;
+    }
+    .nav-item {
+      padding: 15px 20px;
+      cursor: pointer;
+      color: #666;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    .nav-item:hover { color: #e94560; }
+    .nav-item.active {
+      color: #e94560;
+      border-bottom-color: #e94560;
+      font-weight: 600;
+    }
+    
+    /* 主内容 */
+    .container { max-width: 800px; margin: 0 auto; padding: 25px; }
+    
+    .page-title {
+      color: #1a1a2e;
+      margin-bottom: 25px;
+      font-size: 20px;
+    }
+    
+    /* 二维码卡片 */
+    .qrcard {
+      background: white;
+      border-radius: 16px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .qrcard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .qrcard-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1a1a2e;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .qrcard-title.wechat { color: #07c160; }
+    .qrcard-title.alipay { color: #1677ff; }
+    
+    /* 二维码显示 */
+    .qr-preview {
+      text-align: center;
+      padding: 30px;
+      background: #f8f9fa;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+    .qr-preview img {
+      max-width: 220px;
+      border-radius: 12px;
+      border: 3px solid #eee;
+    }
+    .qr-placeholder {
+      color: #999;
+      padding: 40px;
+      font-size: 14px;
+    }
+    
+    .qr-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 15px;
+    }
+    .qr-expire {
+      color: #e94560;
+      font-weight: 600;
+    }
+    .qr-expire.expired { color: #999; }
+    
+    /* 上传区域 */
+    .upload-area {
+      border: 2px dashed #ddd;
+      border-radius: 12px;
+      padding: 30px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .upload-area:hover {
+      border-color: #e94560;
+      background: #fffafb;
+    }
+    .upload-area input {
+      display: none;
+    }
+    .upload-icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+    .upload-text {
+      color: #666;
+      font-size: 14px;
+    }
+    .upload-text span {
+      color: #e94560;
+      font-weight: 600;
+    }
+    
+    /* 按钮 */
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .btn {
+      flex: 1;
+      padding: 12px 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #e94560;
+      color: white;
+    }
+    .btn-primary:hover { background: #d63850; }
+    .btn-danger {
+      background: #ff7675;
+      color: white;
+    }
+    .btn-danger:hover { background: #d63030; }
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #666;
+    }
+    
+    /* 提示 */
+    .tips {
+      background: #fffbe6;
+      border-radius: 8px;
+      padding: 12px 15px;
+      margin-top: 20px;
+      font-size: 13px;
+      color: #666;
+      line-height: 1.6;
+    }
+    
+    /* 状态消息 */
+    .status-msg {
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+      font-size: 14px;
+      display: none;
+    }
+    .status-msg.success {
+      display: block;
+      background: #d4edda;
+      color: #155724;
+    }
+    .status-msg.error {
+      display: block;
+      background: #f8d7da;
+      color: #721c24;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>🔧 发卡商城后台</h1>
+    <div class="header-right">
+      <a href="orders.html">订单管理</a>
+      <a href="products.html">商品管理</a>
+      <a href="qrcodes.html">二维码管理</a>
+      <span class="logout-btn" onclick="logout()">退出</span>
+    </div>
+  </header>
+  
+  <nav class="nav">
+    <ul class="nav-list">
+      <li class="nav-item" onclick="location.href='orders.html'">📦 订单管理</li>
+      <li class="nav-item" onclick="location.href='products.html'">🛍️ 商品管理</li>
+      <li class="nav-item" onclick="location.href='qrcodes.html'">💰 二维码管理</li>
+      <li class="nav-item" onclick="location.href='settings.html'">⚙️ 系统设置</li>
+    </ul>
+  </nav>
+  
+  <div class="container">
+    <h2 class="page-title">💰 收款二维码管理</h2>
+    
+    <!-- 微信二维码 -->
+    <div class="qrcard">
+      <div class="qrcard-header">
+        <div class="qrcard-title wechat">💚 微信收款码</div>
+      </div>
+      
+      <div class="qr-preview" id="wechatPreview">
+        <div class="qr-placeholder">暂无二维码</div>
+      </div>
+      
+      <div class="qr-info" id="wechatInfo" style="display:none;">
+        <span>上传时间: <span id="wechatTime">-</span></span>
+        <span class="qr-expire" id="wechatExpire"></span>
+      </div>
+      
+      <label class="upload-area">
+        <input type="file" id="wechatFile" accept="image/*" onchange="uploadQR('wechat')">
+        <div class="upload-icon">📤</div>
+        <div class="upload-text">点击或拖拽上传<br><span>更换</span>微信收款码</div>
+      </label>
+      
+      <div class="btn-group">
+        <button class="btn btn-danger" onclick="deleteQR('wechat')">🗑️ 删除二维码</button>
+      </div>
+      
+      <div class="status-msg" id="wechatStatus"></div>
+    </div>
+    
+    <!-- 支付宝二维码 -->
+    <div class="qrcard">
+      <div class="qrcard-header">
+        <div class="qrcard-title alipay">💙 支付宝收款码</div>
+      </div>
+      
+      <div class="qr-preview" id="alipayPreview">
+        <div class="qr-placeholder">暂无二维码</div>
+      </div>
+      
+      <div class="qr-info" id="alipayInfo" style="display:none;">
+        <span>上传时间: <span id="alipayTime">-</span></span>
+        <span class="qr-expire" id="alipayExpire"></span>
+      </div>
+      
+      <label class="upload-area">
+        <input type="file" id="alipayFile" accept="image/*" onchange="uploadQR('alipay')">
+        <div class="upload-icon">📤</div>
+        <div class="upload-text">点击或拖拽上传<br><span>更换</span>支付宝收款码</div>
+      </label>
+      
+      <div class="btn-group">
+        <button class="btn btn-danger" onclick="deleteQR('alipay')">🗑️ 删除二维码</button>
+      </div>
+      
+      <div class="status-msg" id="alipayStatus"></div>
+    </div>
+    
+    <!-- USDT二维码 -->
+    <div class="qrcard">
+      <div class="qrcard-header">
+        <div class="qrcard-title alipay" style="color:#f7931a;">₿ USDT收款码</div>
+      </div>
+      
+      <div class="qr-preview" id="usdtPreview">
+        <div class="qr-placeholder">暂无二维码</div>
+      </div>
+      
+      <div class="qr-info" id="usdtInfo" style="display:none;">
+        <span>上传时间: <span id="usdtTime">-</span></span>
+        <span class="qr-expire" id="usdtExpire"></span>
+      </div>
+      
+      <label class="upload-area">
+        <input type="file" id="usdtFile" accept="image/*" onchange="uploadQR('usdt')">
+        <div class="upload-icon">📤</div>
+        <div class="upload-text">点击或拖拽上传<br><span>更换</span>USDT收款码</div>
+      </label>
+      
+      <div class="btn-group">
+        <button class="btn btn-danger" onclick="deleteQR('usdt')">🗑️ 删除二维码</button>
+      </div>
+      
+      <div class="status-msg" id="usdtStatus"></div>
+    </div>
+    
+    <div class="tips">
+      📌 <strong>使用说明：</strong><br>
+      • 上传的二维码有效期为5分钟，请及时更换<br>
+      • 建议上传清晰完整的收款码图片<br>
+      • 客户在支付页可以选择微信、支付宝或USDT支付
+    </div>
+  </div>
+
+  <script>
+    // 检查登录
+    function checkAuth() {
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        location.href = 'login.html';
+        return;
+      }
+    }
+    
+    // 加载二维码
+    async function loadQRCodes() {
+      try {
+        const res = await fetch('/api/admin/qrcodes');
+        const qrcodes = await res.json();
+        
+        // 渲染微信二维码
+        const wechatQR = qrcodes.find(q => q.type === 'wechat');
+        renderQR('wechat', wechatQR);
+        
+        // 渲染支付宝二维码
+        const alipayQR = qrcodes.find(q => q.type === 'alipay');
+        renderQR('alipay', alipayQR);
+        
+        // 渲染USDT二维码
+        const usdtQR = qrcodes.find(q => q.type === 'usdt');
+        renderQR('usdt', usdtQR);
+        
+      } catch (e) {
+        console.error('加载失败', e);
+      }
+    }
+    
+    function renderQR(type, qr) {
+      const preview = document.getElementById(type + 'Preview');
+      const info = document.getElementById(type + 'Info');
+      const time = document.getElementById(type + 'Time');
+      const expire = document.getElementById(type + 'Expire');
+      
+      const typeNames = { 'wechat': '微信', 'alipay': '支付宝', 'usdt': 'USDT' };
+      
+      if (qr && qr.filename) {
+        preview.innerHTML = `<img src="/uploads/${qr.filename}" alt="${type}收款码">`;
+        info.style.display = 'flex';
+        
+        const uploadTime = new Date(qr.uploadTime);
+        time.textContent = uploadTime.toLocaleString('zh-CN');
+        
+        // 计算过期时间
+        const now = Date.now();
+        const expires = qr.uploadTime + 5 * 60 * 1000;
+        const remaining = expires - now;
+        
+        if (remaining > 0) {
+          const mins = Math.floor(remaining / 60000);
+          const secs = Math.floor((remaining % 60000) / 1000);
+          expire.textContent = `剩余 ${mins}:${secs.toString().padStart(2, '0')}`;
+          expire.classList.remove('expired');
+        } else {
+          expire.textContent = '已过期';
+          expire.classList.add('expired');
+        }
+      } else {
+        preview.innerHTML = `<div class="qr-placeholder">暂无${typeNames[type]}二维码</div>`;
+        info.style.display = 'none';
+      }
+    }
+    
+    // 上传二维码
+    async function uploadQR(type) {
+      const fileInput = document.getElementById(type + 'File');
+      const file = fileInput.files[0];
+      
+      if (!file) return;
+      
+      const formData = new FormData();
+      formData.append('qrcode', file);
+      formData.append('type', type);
+      
+      const status = document.getElementById(type + 'Status');
+      status.className = 'status-msg';
+      status.textContent = '上传中...';
+      status.style.display = 'block';
+      
+      try {
+        const res = await fetch('/api/admin/qrcode', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          status.className = 'status-msg success';
+          status.textContent = '✅ 上传成功！';
+          loadQRCodes();
+        } else {
+          status.className = 'status-msg error';
+          status.textContent = '❌ 上传失败: ' + (data.error || '未知错误');
+        }
+      } catch (e) {
+        status.className = 'status-msg error';
+        status.textContent = '❌ 网络错误';
+      }
+      
+      // 清空input
+      fileInput.value = '';
+      
+      // 3秒后隐藏消息
+      setTimeout(() => {
+        status.style.display = 'none';
+      }, 3000);
+    }
+    
+    // 删除二维码
+    async function deleteQR(type) {
+      if (!confirm(`确定删除${type === 'wechat' ? '微信' : '支付宝'}收款码？`)) return;
+      
+      try {
+        const res = await fetch('/api/admin/qrcode/' + type, { method: 'DELETE' });
+        const data = await res.json();
+        
+        if (data.success) {
+          alert('删除成功');
+          loadQRCodes();
+        } else {
+          alert('删除失败');
+        }
+      } catch (e) {
+        alert('网络错误');
+      }
+    }
+    
+    function logout() {
+      localStorage.removeItem('admin_token');
+      location.href = 'login.html';
+    }
+    
+    // 定期刷新状态
+    setInterval(loadQRCodes, 10000);
+    
+    checkAuth();
+    loadQRCodes();
+  </script>
+</body>
+</html>

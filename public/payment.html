@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>订单支付 - 发卡商城</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      background: #f5f5f5; 
+      min-height: 100vh;
+    }
+    .header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 18px; }
+    .header a { color: white; text-decoration: none; font-size: 14px; }
+    
+    .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+    
+    /* 订单信息 */
+    .order-info {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .order-id { 
+      color: #666; 
+      font-size: 14px; 
+      margin-bottom: 5px; 
+    }
+    .order-id strong { 
+      color: #1a1a2e; 
+      font-size: 16px; 
+    }
+    .amount {
+      font-size: 32px;
+      font-weight: 700;
+      color: #e94560;
+      margin: 10px 0;
+    }
+    .amount span { font-size: 16px; font-weight: normal; }
+    
+    /* 支付方式 */
+    .payment-section {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .payment-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .payment-tab {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid #eee;
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+    .payment-tab.active {
+      border-color: #e94560;
+      background: #fff5f7;
+      color: #e94560;
+      font-weight: 600;
+    }
+    
+    /* 二维码 */
+    .qrcode-container {
+      text-align: center;
+      padding: 20px;
+    }
+    .qrcode {
+      width: 220px;
+      height: 220px;
+      border: 3px solid #e94560;
+      border-radius: 12px;
+      margin: 15px auto;
+      display: block;
+    }
+    .qrcode-placeholder {
+      width: 220px;
+      height: 220px;
+      border: 3px dashed #ddd;
+      border-radius: 12px;
+      margin: 15px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #999;
+      font-size: 14px;
+    }
+    
+    /* 倒计时 */
+    .timer {
+      text-align: center;
+      color: #e94560;
+      font-size: 18px;
+      font-weight: 600;
+      margin: 15px 0;
+    }
+    .timer.expired { color: #999; }
+    
+    /* 提示 */
+    .tips {
+      background: #fffbe6;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+      font-size: 13px;
+      color: #666;
+      line-height: 1.6;
+    }
+    
+    /* 按钮 */
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+    }
+    .btn-primary {
+      background: #e94560;
+      color: white;
+    }
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #666;
+    }
+    
+    /* 状态 */
+    .status-badge {
+      display: inline-block;
+      padding: 6px 15px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+    .status-paid { background: #d4edda; color: #155724; }
+    .status-shipped { background: #cce5ff; color: #004085; }
+    .status-pending { background: #fff3cd; color: #856404; }
+    
+    .refresh-btn {
+      display: inline-block;
+      color: #e94560;
+      font-size: 13px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    
+    /* 复制按钮 */
+    .copy-btn {
+      background: #f0f0f0;
+      border: none;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      margin-left: 10px;
+      color: #666;
+    }
+    .copy-btn:hover { background: #e0e0e0; }
+    .copy-btn.copied { background: #00b894; color: white; }
+    
+    /* 自定义文案 */
+    .custom-message {
+      background: #fffbe6;
+      border-radius: 8px;
+      padding: 12px 15px;
+      margin-top: 10px;
+      font-size: 13px;
+      color: #666;
+      text-align: center;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>💰 订单支付</h1>
+    <a href="query.html">查询订单</a>
+  </header>
+  
+  <div class="container">
+    <!-- 订单信息 -->
+    <div class="order-info">
+      <div class="order-id">
+        订单号：<strong id="orderId">加载中...</strong>
+        <button class="copy-btn" onclick="copyOrderId()">📋 复制</button>
+      </div>
+      <!-- 订单金额隐藏，按需显示 -->
+      <!-- <div class="amount">¥<span id="amount">0</span></div> -->
+      <div id="customMessage" class="custom-message">付款成功后请留意短信/邮箱通知</div>
+      <div id="statusBadge"></div>
+    </div>
+    
+    <!-- 支付方式 -->
+    <div class="payment-section" id="paymentSection">
+      <div class="payment-tabs" id="paymentTabs">
+        <div class="payment-tab" data-type="wechat" onclick="switchPayment('wechat')">💚 微信支付</div>
+        <div class="payment-tab" data-type="alipay" onclick="switchPayment('alipay')">💙 支付宝</div>
+        <div class="payment-tab" data-type="usdt" onclick="switchPayment('usdt')">₿ USDT</div>
+      </div>
+      
+      <div class="qrcode-container">
+        <div id="qrcodeDisplay">
+          <div class="qrcode-placeholder" id="qrcodePlaceholder">加载中...</div>
+        </div>
+        <div class="timer" id="timer">⏰ 有效时间: 05:00</div>
+        <div class="refresh-btn" onclick="refreshQRCode()">🔄 刷新二维码</div>
+      </div>
+      
+      <div class="tips">
+        📌 请使用<span id="payMethodText">微信</span>扫描上方二维码完成支付<br>
+        ⏱️ 请在5分钟内完成支付，逾期订单将自动取消<br>
+        ✅ 支付成功后，请留意短信/邮箱通知
+      </div>
+      
+      <div class="btn-group">
+        <button class="btn btn-secondary" onclick="checkOrderStatus()">📋 查看订单状态</button>
+        <button class="btn btn-primary" onclick="confirmPaid()">✅ 我已支付</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const orderId = new URLSearchParams(location.search).get('orderId');
+    const urlPaymentMethod = new URLSearchParams(location.search).get('method');
+    let currentPayment = urlPaymentMethod || 'wechat';
+    let qrRefreshInterval = null;
+    let timerInterval = null;
+    let orderData = null;
+    
+    // 初始化
+    async function init() {
+      if (!orderId) {
+        alert('订单号无效');
+        location.href = 'index.html';
+        return;
+      }
+      
+      document.getElementById('orderId').textContent = orderId;
+      
+      // 设置支付方式
+      document.querySelectorAll('.payment-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.dataset.type === currentPayment) {
+          tab.classList.add('active');
+        }
+      });
+      const methodNames = { 'wechat': '微信', 'alipay': '支付宝', 'usdt': 'USDT' };
+      document.getElementById('payMethodText').textContent = methodNames[currentPayment] || '微信';
+      
+      // 加载自定义文案
+      await loadCustomMessage();
+      
+      await loadOrder();
+      startTimer();
+      
+      // 每30秒自动刷新二维码
+      qrRefreshInterval = setInterval(refreshQRCode, 30000);
+    }
+    
+    // 加载自定义文案
+    async function loadCustomMessage() {
+      try {
+        const res = await fetch('/api/config/payment_message');
+        const data = await res.json();
+        if (data.message) {
+          document.getElementById('customMessage').textContent = data.message;
+        }
+      } catch (e) {
+        console.log('使用默认文案');
+      }
+    }
+    
+    // 加载订单
+    async function loadOrder() {
+      try {
+        const res = await fetch('/api/orders/' + orderId);
+        const data = await res.json();
+        
+        if (!data || data.error) {
+          alert('订单不存在');
+          location.href = 'index.html';
+          return;
+        }
+        
+        orderData = data;
+        document.getElementById('amount').textContent = data.total_amount || data.amount || 0;
+        
+        // 显示状态
+        const statusBadge = document.getElementById('statusBadge');
+        const paymentSection = document.getElementById('paymentSection');
+        
+        if (data.status === 'paid' || data.status === 'shipped' || data.status === 'delivered') {
+          statusBadge.innerHTML = `<span class="status-badge status-paid">✓ 订单已支付，等待发货</span>`;
+          paymentSection.style.display = 'none';
+        } else if (data.status === 'shipped') {
+          statusBadge.innerHTML = `<span class="status-badge status-shipped">🚚 已发货</span>`;
+          paymentSection.style.display = 'none';
+        }
+        
+        if (data.status !== 'pending') {
+          return;
+        }
+        
+        // 加载二维码
+        loadQRCode();
+      } catch (e) {
+        console.error('加载订单失败', e);
+      }
+    }
+    
+    // 切换支付方式
+    function switchPayment(method) {
+      currentPayment = method;
+      document.querySelectorAll('.payment-tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('payMethodText').textContent = method === 'wechat' ? '微信' : '支付宝';
+      loadQRCode();
+    }
+    
+    // 加载二维码
+    async function loadQRCode() {
+      try {
+        const res = await fetch('/api/qrcodes?type=' + currentPayment);
+        const qrcodes = await res.json();
+        
+        const container = document.getElementById('qrcodeDisplay');
+        
+        if (qrcodes && qrcodes.length > 0) {
+          const qr = qrcodes[0];
+          container.innerHTML = `<img src="/uploads/${qr.filename}" alt="收款码" class="qrcode">`;
+        } else {
+          container.innerHTML = `<div class="qrcode-placeholder">暂无可用收款码<br>请通知商家上传</div>`;
+        }
+      } catch (e) {
+        document.getElementById('qrcodeDisplay').innerHTML = 
+          `<div class="qrcode-placeholder">加载失败<br>点击刷新</div>`;
+      }
+    }
+    
+    // 刷新二维码
+    function refreshQRCode() {
+      loadQRCode();
+    }
+    
+    // 倒计时
+    function startTimer() {
+      let remaining = 5 * 60 * 1000;
+      
+      timerInterval = setInterval(() => {
+        remaining -= 1000;
+        
+        if (remaining <= 0) {
+          clearInterval(timerInterval);
+          document.getElementById('timer').textContent = '⏰ 订单已过期';
+          document.getElementById('timer').classList.add('expired');
+          return;
+        }
+        
+        const mins = Math.floor(remaining / 60000);
+        const secs = Math.floor((remaining % 60000) / 1000);
+        document.getElementById('timer').textContent = 
+          `⏰ 有效时间: ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      }, 1000);
+    }
+    
+    // 查看订单状态
+    function checkOrderStatus() {
+      location.href = 'query.html?orderId=' + orderId;
+    }
+    
+    // 确认已支付
+    function confirmPaid() {
+      if (confirm('请确认您已完成支付？')) {
+        alert('已提交支付确认，商家将会核实支付结果');
+      }
+    }
+    
+    // 复制订单号
+    function copyOrderId() {
+      const orderId = document.getElementById('orderId').textContent;
+      navigator.clipboard.writeText(orderId).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        btn.textContent = '✓ 已复制';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = '📋 复制';
+          btn.classList.remove('copied');
+        }, 2000);
+      }).catch(() => {
+        alert('复制失败，请手动复制');
+      });
+    }
+    
+    init();
+  </script>
+</body>
+</html>

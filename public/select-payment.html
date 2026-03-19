@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>选择支付方式 - W小小小店</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      background: #f5f5f5; 
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      padding: 15px 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+    .header h1 { font-size: 18px; text-align: center; }
+    
+    .container { max-width: 500px; margin: 0 auto; }
+    
+    .order-info {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .order-info h3 { color: #1a1a2e; margin-bottom: 15px; }
+    .order-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; }
+    .order-row .label { color: #666; }
+    .order-row .value { color: #333; font-weight: 500; }
+    .order-row.total { border-top: 1px solid #eee; margin-top: 10px; padding-top: 15px; font-size: 16px; }
+    .order-row.total .value { color: #e94560; font-weight: 700; font-size: 20px; }
+    
+    .payment-section {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .payment-section h3 { color: #1a1a2e; margin-bottom: 15px; }
+    
+    .payment-option {
+      display: flex;
+      align-items: center;
+      padding: 15px;
+      border: 2px solid #eee;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .payment-option:hover { border-color: #e94560; }
+    .payment-option.selected { border-color: #e94560; background: #fff5f7; }
+    .payment-option.disabled { opacity: 0.5; cursor: not-allowed; }
+    .payment-icon { font-size: 28px; margin-right: 15px; }
+    .payment-name { font-size: 16px; font-weight: 600; color: #1a1a2e; }
+    .payment-status { font-size: 12px; color: #999; margin-left: auto; }
+    .payment-status.ok { color: #00b894; }
+    
+    .btn-pay {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #e94560 0%, #d63850 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .btn-pay:disabled { background: #ccc; cursor: not-allowed; }
+    
+    .tips {
+      background: #fffbe6;
+      border-radius: 8px;
+      padding: 12px 15px;
+      margin-top: 15px;
+      font-size: 13px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>💰 选择支付方式</h1>
+  </header>
+  
+  <div class="container">
+    <div class="order-info">
+      <h3>📦 订单信息</h3>
+      <div class="order-row">
+        <span class="label">订单号</span>
+        <span class="value" id="orderId">加载中...</span>
+      </div>
+      <div class="order-row">
+        <span class="label">商品</span>
+        <span class="value" id="productName">-</span>
+      </div>
+      <div class="order-row">
+        <span class="label">收货人</span>
+        <span class="value" id="customerName">-</span>
+      </div>
+      <div class="order-row total">
+        <span class="label">应付金额</span>
+        <span class="value" id="orderAmount">¥0</span>
+      </div>
+    </div>
+    
+    <div class="payment-section">
+      <h3>💳 选择支付方式</h3>
+      
+      <div class="payment-option" data-type="wechat" onclick="selectPayment('wechat')">
+        <span class="payment-icon">💚</span>
+        <span class="payment-name">微信支付</span>
+        <span class="payment-status" id="status-wechat">有码</span>
+      </div>
+      
+      <div class="payment-option" data-type="alipay" onclick="selectPayment('alipay')">
+        <span class="payment-icon">💙</span>
+        <span class="payment-name">支付宝</span>
+        <span class="payment-status" id="status-alipay">有码</span>
+      </div>
+      
+      <div class="payment-option" data-type="usdt" onclick="selectPayment('usdt')">
+        <span class="payment-icon">₿</span>
+        <span class="payment-name">USDT</span>
+        <span class="payment-status" id="status-usdt">有码</span>
+      </div>
+      
+      <button class="btn-pay" id="btnPay" onclick="goToPayment()" disabled>去支付</button>
+      
+      <div class="tips" id="paymentTips">
+        请选择一种支付方式
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const orderId = new URLSearchParams(location.search).get('orderId');
+    let selectedPayment = '';
+    let orderData = null;
+    let qrCodes = {};
+    
+    async function init() {
+      if (!orderId) {
+        alert('订单号无效');
+        location.href = 'index.html';
+        return;
+      }
+      
+      document.getElementById('orderId').textContent = orderId;
+      
+      // 加载订单信息
+      await loadOrder();
+      
+      // 检查各支付方式的收款码
+      await checkQRCodes();
+    }
+    
+    async function loadOrder() {
+      try {
+        const res = await fetch('/api/orders/' + orderId);
+        orderData = await res.json();
+        
+        if (!orderData || orderData.error) {
+          alert('订单不存在');
+          location.href = 'index.html';
+          return;
+        }
+        
+        document.getElementById('productName').textContent = orderData.products ? orderData.products[0].name : '-';
+        document.getElementById('customerName').textContent = orderData.customer_name;
+        document.getElementById('orderAmount').textContent = '¥' + (orderData.total_amount || orderData.amount || 0);
+      } catch (e) {
+        console.error('加载订单失败', e);
+      }
+    }
+    
+    async function checkQRCodes() {
+      const types = ['wechat', 'alipay', 'usdt'];
+      
+      for (const type of types) {
+        try {
+          const res = await fetch('/api/qrcodes?type=' + type);
+          const qrcodes = await res.json();
+          const statusEl = document.getElementById('status-' + type);
+          const optionEl = document.querySelector('.payment-option[data-type="' + type + '"]');
+          
+          if (qrcodes && qrcodes.length > 0) {
+            qrCodes[type] = qrcodes[0];
+            statusEl.textContent = '✓ 有码';
+            statusEl.classList.add('ok');
+          } else {
+            statusEl.textContent = '暂不可用';
+            optionEl.classList.add('disabled');
+            optionEl.onclick = null;
+          }
+        } catch (e) {
+          console.error('检查' + type + '收款码失败', e);
+        }
+      }
+    }
+    
+    function selectPayment(type) {
+      const optionEl = document.querySelector('.payment-option[data-type="' + type + '"]');
+      if (optionEl.classList.contains('disabled')) {
+        alert('该支付方式暂不可用，请联系商家');
+        return;
+      }
+      
+      // 取消其他选中
+      document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('selected'));
+      
+      // 选中当前
+      optionEl.classList.add('selected');
+      selectedPayment = type;
+      
+      // 启用支付按钮
+      document.getElementById('btnPay').disabled = false;
+      document.getElementById('paymentTips').textContent = '已选择' + (type === 'wechat' ? '微信' : type === 'alipay' ? '支付宝' : 'USDT') + '支付';
+    }
+    
+    function goToPayment() {
+      if (!selectedPayment) {
+        alert('请选择支付方式');
+        return;
+      }
+      
+      // 跳转到支付页
+      location.href = 'payment.html?orderId=' + orderId + '&method=' + selectedPayment;
+    }
+    
+    init();
+  </script>
+</body>
+</html>

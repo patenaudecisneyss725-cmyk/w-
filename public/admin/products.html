@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>商品管理 - 发卡商城后台</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      background: #f5f6fa;
+      min-height: 100vh;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      padding: 15px 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 20px; }
+    .header-right { display: flex; gap: 15px; align-items: center; }
+    .header a { color: white; text-decoration: none; font-size: 14px; }
+    .logout-btn {
+      background: #e94560;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    
+    .nav {
+      background: white;
+      padding: 0 25px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .nav-list { display: flex; gap: 5px; list-style: none; }
+    .nav-item {
+      padding: 15px 20px;
+      cursor: pointer;
+      color: #666;
+      border-bottom: 3px solid transparent;
+    }
+    .nav-item:hover { color: #e94560; }
+    .nav-item.active {
+      color: #e94560;
+      border-bottom-color: #e94560;
+      font-weight: 600;
+    }
+    
+    .container { max-width: 1000px; margin: 0 auto; padding: 25px; }
+    
+    /* 添加商品表单 */
+    .add-card {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 25px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .add-card h3 { color: #1a1a2e; margin-bottom: 20px; }
+    
+    .form-row { display: flex; gap: 15px; flex-wrap: wrap; }
+    .form-group { flex: 1; min-width: 200px; margin-bottom: 15px; }
+    .form-group label { display: block; color: #333; margin-bottom: 6px; font-size: 14px; }
+    .form-group input, .form-group textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .form-group textarea { min-height: 80px; resize: vertical; }
+    
+    .btn {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: #e94560; color: white; }
+    .btn-primary:hover { background: #d63850; }
+    .btn-danger { background: #ff7675; color: white; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    
+    /* 商品列表 */
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .product-card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .product-image {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      background: #f5f5f5;
+    }
+    .product-info { padding: 15px; }
+    .product-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1a1a2e;
+      margin-bottom: 8px;
+    }
+    .product-desc {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+    .product-price {
+      font-size: 20px;
+      font-weight: 700;
+      color: #e94560;
+    }
+    .product-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .product-actions .btn { flex: 1; }
+    
+    .empty {
+      text-align: center;
+      padding: 60px;
+      color: #999;
+    }
+    
+    /* 弹窗 */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal.show { display: flex; }
+    .modal-content {
+      background: white;
+      border-radius: 16px;
+      padding: 25px;
+      width: 90%;
+      max-width: 450px;
+    }
+    .modal-title {
+      font-size: 18px;
+      color: #1a1a2e;
+      margin-bottom: 20px;
+    }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .modal-actions .btn { flex: 1; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>🔧 发卡商城后台</h1>
+    <div class="header-right">
+      <a href="orders.html">订单管理</a>
+      <a href="products.html">商品管理</a>
+      <a href="qrcodes.html">二维码管理</a>
+      <span class="logout-btn" onclick="logout()">退出</span>
+    </div>
+  </header>
+  
+  <nav class="nav">
+    <ul class="nav-list">
+      <li class="nav-item" onclick="location.href='orders.html'">📦 订单管理</li>
+      <li class="nav-item" onclick="location.href='products.html'">🛍️ 商品管理</li>
+      <li class="nav-item" onclick="location.href='qrcodes.html'">💰 二维码管理</li>
+      <li class="nav-item" onclick="location.href='settings.html'">⚙️ 系统设置</li>
+    </ul>
+  </nav>
+  
+  <div class="container">
+    <!-- 添加商品 -->
+    <div class="add-card">
+      <h3>➕ 添加新商品</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>商品名称 *</label>
+          <input type="text" id="productName" placeholder="例如：100元充值卡">
+        </div>
+        <div class="form-group">
+          <label>价格 (¥) *</label>
+          <input type="number" id="productPrice" placeholder="例如：100" step="0.01">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>商品描述</label>
+        <textarea id="productDesc" placeholder="商品简介..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>商品图片</label>
+        <input type="file" id="productImage" accept="image/*">
+        <p style="font-size:12px;color:#666;margin-top:5px;">建议尺寸：800x800像素，支持 JPG、PNG</p>
+      </div>
+      <button class="btn btn-primary" onclick="addProduct()">💾 保存商品</button>
+    </div>
+    
+    <!-- 商品列表 -->
+    <h3 style="color:#1a1a2e;margin-bottom:15px;">商品列表</h3>
+    <div class="products-grid" id="productsList">
+      <div class="empty">加载中...</div>
+    </div>
+  </div>
+  
+  <!-- 编辑商品弹窗 -->
+  <div class="modal" id="editModal">
+    <div class="modal-content">
+      <h3 class="modal-title">✏️ 编辑商品</h3>
+      <input type="hidden" id="editProductId">
+      <div class="form-group">
+        <label>商品名称</label>
+        <input type="text" id="editName">
+      </div>
+      <div class="form-group">
+        <label>价格 (¥)</label>
+        <input type="number" id="editPrice" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>商品描述</label>
+        <textarea id="editDesc"></textarea>
+      </div>
+      <div class="form-group">
+        <label>更换图片</label>
+        <input type="file" id="editImage" accept="image/*">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="saveEdit()">保存</button>
+        <button class="btn btn-danger" onclick="closeModal('editModal')">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let productsData = [];
+    
+    function checkAuth() {
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        location.href = 'login.html';
+        return;
+      }
+    }
+    
+    async function loadProducts() {
+      try {
+        const res = await fetch('/api/admin/products');
+        productsData = await res.json();
+        renderProducts();
+      } catch (e) {
+        console.error('加载失败', e);
+      }
+    }
+    
+    function renderProducts() {
+      const container = document.getElementById('productsList');
+      
+      if (productsData.length === 0) {
+        container.innerHTML = '<div class="empty">暂无商品，请添加商品</div>';
+        return;
+      }
+      
+      container.innerHTML = productsData.map(p => `
+        <div class="product-card">
+          <img src="${p.images && p.images[0] ? p.images[0] : '/uploads/product.jpg'}" class="product-image" alt="${p.name}">
+          <div class="product-info">
+            <div class="product-name">${p.name}</div>
+            <div class="product-desc">${p.description || '暂无描述'}</div>
+            <div class="product-price">¥${p.price}</div>
+            <div class="product-actions">
+              <button class="btn btn-primary btn-sm" onclick="openEdit('${p.id}')">✏️ 编辑</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')">🗑️ 删除</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    async function addProduct() {
+      const name = document.getElementById('productName').value.trim();
+      const price = document.getElementById('productPrice').value;
+      const description = document.getElementById('productDesc').value.trim();
+      const imageFile = document.getElementById('productImage').files[0];
+      
+      if (!name || !price) {
+        alert('请填写商品名称和价格');
+        return;
+      }
+      
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('price', parseFloat(price));
+      if (description) formData.append('description', description);
+      if (imageFile) formData.append('image', imageFile);
+      
+      try {
+        const res = await fetch('/api/admin/products', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          alert('商品添加成功');
+          // 清空表单
+          document.getElementById('productName').value = '';
+          document.getElementById('productPrice').value = '';
+          document.getElementById('productDesc').value = '';
+          document.getElementById('productImage').value = '';
+          loadProducts();
+        } else {
+          alert(data.error || '添加失败');
+        }
+      } catch (e) {
+        alert('添加失败');
+      }
+    }
+    
+    function openEdit(productId) {
+      const p = productsData.find(prod => prod.id === productId);
+      if (!p) return;
+      
+      document.getElementById('editProductId').value = productId;
+      document.getElementById('editName').value = p.name;
+      document.getElementById('editPrice').value = p.price;
+      document.getElementById('editDesc').value = p.description || '';
+      document.getElementById('editModal').classList.add('show');
+    }
+    
+    async function saveEdit() {
+      const productId = document.getElementById('editProductId').value;
+      const name = document.getElementById('editName').value.trim();
+      const price = document.getElementById('editPrice').value;
+      const description = document.getElementById('editDesc').value.trim();
+      const imageFile = document.getElementById('editImage').files[0];
+      
+      if (!name || !price) {
+        alert('请填写名称和价格');
+        return;
+      }
+      
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('price', parseFloat(price));
+      if (description) formData.append('description', description);
+      if (imageFile) formData.append('image', imageFile);
+      
+      try {
+        const res = await fetch('/api/admin/products/' + productId, {
+          method: 'PUT',
+          body: formData
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          alert('保存成功');
+          closeModal('editModal');
+          loadProducts();
+        } else {
+          alert(data.error || '保存失败');
+        }
+      } catch (e) {
+        alert('保存失败');
+      }
+    }
+    
+    async function deleteProduct(productId) {
+      if (!confirm('确定删除该商品？')) return;
+      
+      try {
+        const res = await fetch('/api/admin/products/' + productId, { method: 'DELETE' });
+        const data = await res.json();
+        
+        if (data.success) {
+          alert('删除成功');
+          loadProducts();
+        } else {
+          alert(data.error || '删除失败');
+        }
+      } catch (e) {
+        alert('删除失败');
+      }
+    }
+    
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('show');
+    }
+    
+    function logout() {
+      localStorage.removeItem('admin_token');
+      location.href = 'login.html';
+    }
+    
+    checkAuth();
+    loadProducts();
+  </script>
+</body>
+</html>

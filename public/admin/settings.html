@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>系统设置 - 发卡商城后台</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      background: #f5f6fa;
+      min-height: 100vh;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      padding: 15px 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 20px; }
+    .header-right { display: flex; gap: 15px; align-items: center; }
+    .header a { color: white; text-decoration: none; font-size: 14px; }
+    .logout-btn {
+      background: #e94560;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    
+    .nav {
+      background: white;
+      padding: 0 25px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .nav-list { display: flex; gap: 5px; list-style: none; }
+    .nav-item {
+      padding: 15px 20px;
+      cursor: pointer;
+      color: #666;
+      border-bottom: 3px solid transparent;
+    }
+    .nav-item:hover { color: #e94560; }
+    .nav-item.active {
+      color: #e94560;
+      border-bottom-color: #e94560;
+      font-weight: 600;
+    }
+    
+    .container { max-width: 800px; margin: 0 auto; padding: 25px; }
+    
+    .settings-card {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .settings-card h3 { 
+      color: #1a1a2e; 
+      margin-bottom: 15px; 
+      font-size: 16px;
+    }
+    
+    .form-group { margin-bottom: 15px; }
+    .form-group label { 
+      display: block; 
+      color: #333; 
+      margin-bottom: 8px; 
+      font-size: 14px;
+    }
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      min-height: 80px;
+      resize: vertical;
+    }
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #e94560;
+    }
+    .form-hint {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+    
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .btn-primary { 
+      background: #e94560; 
+      color: white; 
+    }
+    .btn-primary:hover { 
+      background: #d63850; 
+    }
+    
+    .status-msg {
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+      font-size: 14px;
+      display: none;
+    }
+    .status-msg.success {
+      display: block;
+      background: #d4edda;
+      color: #155724;
+    }
+    .status-msg.error {
+      display: block;
+      background: #f8d7da;
+      color: #721c24;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>🔧 发卡商城后台</h1>
+    <div class="header-right">
+      <a href="orders.html">订单管理</a>
+      <a href="products.html">商品管理</a>
+      <a href="qrcodes.html">二维码管理</a>
+      <a href="settings.html">系统设置</a>
+      <span class="logout-btn" onclick="logout()">退出</span>
+    </div>
+  </header>
+  
+  <nav class="nav">
+    <ul class="nav-list">
+      <li class="nav-item" onclick="location.href='orders.html'">📦 订单管理</li>
+      <li class="nav-item" onclick="location.href='products.html'">🛍️ 商品管理</li>
+      <li class="nav-item" onclick="location.href='qrcodes.html'">💰 二维码管理</li>
+      <li class="nav-item active" onclick="location.href='settings.html'">⚙️ 系统设置</li>
+    </ul>
+  </nav>
+  
+  <div class="container">
+    <!-- 首页底部文案设置 -->
+    <div class="settings-card">
+      <h3>🏠 首页底部文案</h3>
+      <div class="form-group">
+        <label>自定义底部文字</label>
+        <textarea id="footerMessage" placeholder="© 2026 发卡商城"></textarea>
+        <p class="form-hint">显示在首页最底部的版权信息</p>
+      </div>
+      <button class="btn btn-primary" onclick="saveFooterMessage()">保存设置</button>
+      <div class="status-msg" id="footerMsg"></div>
+    </div>
+    
+    <!-- 支付页面文案设置 -->
+    <div class="settings-card">
+      <h3>💰 支付页面文案</h3>
+      <div class="form-group">
+        <label>自定义提示文案</label>
+        <textarea id="paymentMessage" placeholder="付款成功后请留意短信/邮箱通知"></textarea>
+        <p class="form-hint">显示在支付页面订单下方的提示文字</p>
+      </div>
+      <button class="btn btn-primary" onclick="savePaymentMessage()">保存设置</button>
+      <div class="status-msg" id="statusMsg"></div>
+    </div>
+    
+    <!-- 商品展示方式设置 -->
+    <div class="settings-card">
+      <h3>🛍️ 商品展示方式</h3>
+      <div class="form-group">
+        <label>选择展示模式</label>
+        <select id="displayMode" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;">
+          <option value="grid">🔲 网格排列（大图）</option>
+          <option value="list">📋 列表排列</option>
+          <option value="small">🔳 小图网格</option>
+        </select>
+        <p class="form-hint">前台首页的商品展示方式</p>
+      </div>
+      <button class="btn btn-primary" onclick="saveDisplayMode()">保存设置</button>
+      <div class="status-msg" id="displayModeStatus"></div>
+    </div>
+  </div>
+
+  <script>
+    function checkAuth() {
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        location.href = 'login.html';
+        return;
+      }
+    }
+    
+    // 加载当前设置
+    async function loadSettings() {
+      try {
+        // 加载底部文案
+        const footerRes = await fetch('/api/config/footer_message');
+        const footerData = await footerRes.json();
+        document.getElementById('footerMessage').value = footerData.message || '';
+        
+        // 加载支付页面文案
+        const res = await fetch('/api/config/payment_message');
+        const data = await res.json();
+        document.getElementById('paymentMessage').value = data.message || '';
+        
+        // 加载展示模式
+        const displayRes = await fetch('/api/config/display_mode');
+        const displayData = await displayRes.json();
+        document.getElementById('displayMode').value = displayData.mode || 'grid';
+      } catch (e) {
+        console.error('加载失败', e);
+      }
+    }
+    
+    // 保存底部文案
+    async function saveFooterMessage() {
+      const message = document.getElementById('footerMessage').value.trim();
+      const status = document.getElementById('footerMsg');
+      
+      try {
+        const res = await fetch('/api/admin/config/footer_message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          status.className = 'status-msg success';
+          status.textContent = '✅ 保存成功！';
+        } else {
+          status.className = 'status-msg error';
+          status.textContent = '❌ ' + (data.error || '保存失败');
+        }
+      } catch (e) {
+        status.className = 'status-msg error';
+        status.textContent = '❌ 网络错误';
+      }
+      
+      setTimeout(() => {
+        status.style.display = 'none';
+      }, 3000);
+    }
+    
+    // 保存支付文案
+    async function savePaymentMessage() {
+      const message = document.getElementById('paymentMessage').value.trim();
+      const status = document.getElementById('statusMsg');
+      
+      try {
+        const res = await fetch('/api/admin/config/payment_message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          status.className = 'status-msg success';
+          status.textContent = '✅ 保存成功！';
+        } else {
+          status.className = 'status-msg error';
+          status.textContent = '❌ ' + (data.error || '保存失败');
+        }
+      } catch (e) {
+        status.className = 'status-msg error';
+        status.textContent = '❌ 网络错误';
+      }
+      
+      setTimeout(() => {
+        status.style.display = 'none';
+      }, 3000);
+    }
+    
+    // 保存展示模式
+    async function saveDisplayMode() {
+      const mode = document.getElementById('displayMode').value;
+      const status = document.getElementById('displayModeStatus');
+      
+      try {
+        const res = await fetch('/api/admin/config/display_mode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          status.className = 'status-msg success';
+          status.textContent = '✅ 保存成功！';
+        } else {
+          status.className = 'status-msg error';
+          status.textContent = '❌ ' + (data.error || '保存失败');
+        }
+      } catch (e) {
+        status.className = 'status-msg error';
+        status.textContent = '❌ 网络错误';
+      }
+      
+      setTimeout(() => {
+        status.style.display = 'none';
+      }, 3000);
+    }
+        status.style.display = 'none';
+      }, 3000);
+    }
+    
+    function logout() {
+      localStorage.removeItem('admin_token');
+      location.href = 'login.html';
+    }
+    
+    checkAuth();
+    loadSettings();
+  </script>
+</body>
+</html>

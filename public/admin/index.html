@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>辣妹国内商城 - 后台管理</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f6fa;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 30px;
+    }
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .tab {
+      padding: 12px 24px;
+      background: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.3s;
+    }
+    .tab.active {
+      background: #667eea;
+      color: white;
+    }
+    .panel {
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      display: none;
+    }
+    .panel.active {
+      display: block;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #555;
+    }
+    tr:hover {
+      background: #f8f9fa;
+    }
+    .status {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status.pending {
+      background: #ffeaa7;
+      color: #d63031;
+    }
+    .status.paid {
+      background: #55efc4;
+      color: #00b894;
+    }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #5568d3;
+    }
+    .btn-danger {
+      background: #ff7675;
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #d63031;
+    }
+    .upload-area {
+      border: 3px dashed #ddd;
+      border-radius: 15px;
+      padding: 40px;
+      text-align: center;
+      margin-bottom: 20px;
+      transition: all 0.3s;
+    }
+    .upload-area:hover {
+      border-color: #667eea;
+      background: #f8f9fa;
+    }
+    .upload-area.dragover {
+      border-color: #667eea;
+      background: #e8eaff;
+    }
+    .qr-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .qr-item {
+      border: 2px solid #eee;
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+      position: relative;
+    }
+    .qr-item img {
+      width: 100%;
+      height: auto;
+      border-radius: 5px;
+    }
+    .qr-item .delete-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: #ff7675;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .export-btn {
+      float: right;
+      margin-bottom: 15px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+    }
+    .stat-card h3 {
+      font-size: 36px;
+      margin-bottom: 5px;
+    }
+    .stat-card p {
+      opacity: 0.9;
+    }
+    input[type="file"] {
+      display: none;
+    }
+    .action-btns {
+      display: flex;
+      gap: 5px;
+    }
+    .btn-sm {
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+    .btn-success {
+      background: #00b894;
+      color: white;
+    }
+    .btn-success:hover {
+      background: #00a884;
+    }
+    .btn-warning {
+      background: #fdcb6e;
+      color: #333;
+    }
+    .btn-warning:hover {
+      background: #f1c40f;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+    }
+    .modal.active {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      max-width: 400px;
+      width: 90%;
+    }
+    .modal h3 {
+      margin-bottom: 20px;
+    }
+    .modal .form-group {
+      margin-bottom: 15px;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .shipping-info {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔥 辣妹国内商城 - 后台管理</h1>
+    
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('orders')">订单管理</button>
+      <button class="tab" onclick="switchTab('qrcodes')">收款码管理</button>
+    </div>
+    
+    <!-- 订单面板 -->
+    <div class="panel active" id="ordersPanel">
+      <div class="stats" id="stats"></div>
+      <button class="btn btn-primary export-btn" onclick="exportOrders()">📥 导出 CSV</button>
+      <table>
+        <thead>
+          <tr>
+            <th>订单号</th>
+            <th>姓名</th>
+            <th>手机</th>
+            <th>地址</th>
+            <th>状态</th>
+            <th>时间</th>
+          </tr>
+        </thead>
+        <tbody id="ordersTable"></tbody>
+      </table>
+    </div>
+    
+    <!-- 收款码面板 -->
+    <div class="panel" id="qrcodesPanel">
+      <div class="upload-area" id="uploadArea">
+        <p style="font-size: 18px; color: #666;">📤 拖拽收款码图片到此处，或点击上传</p>
+        <input type="file" id="fileInput" accept="image/*">
+        <button class="btn btn-primary" style="margin-top: 15px;" onclick="document.getElementById('fileInput').click()">选择文件</button>
+      </div>
+      <h3>已上传的收款码</h3>
+      <div class="qr-list" id="qrList"></div>
+    </div>
+  </div>
+  
+  <!-- 发货弹窗 -->
+  <div class="modal" id="shipModal">
+    <div class="modal-content">
+      <h3>🚚 发货</h3>
+      <div class="form-group">
+        <label>快递公司 *</label>
+        <select id="shippingCompany" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px;">
+          <option value="">请选择快递公司</option>
+          <option value="顺丰">顺丰</option>
+          <option value="中通">中通</option>
+          <option value="圆通">圆通</option>
+          <option value="申通">申通</option>
+          <option value="韵达">韵达</option>
+          <option value="邮政">邮政</option>
+          <option value="京东">京东</option>
+          <option value="极兔">极兔</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>快递单号 *</label>
+        <input type="text" id="trackingNumber" placeholder="请输入快递单号">
+      </div>
+      <div class="modal-buttons">
+        <button class="btn btn-primary" onclick="confirmShip()">确认发货</button>
+        <button class="btn btn-danger" onclick="closeShipModal()">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 切换标签
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById(tab + 'Panel').classList.add('active');
+      
+      if (tab === 'orders') loadOrders();
+      if (tab === 'qrcodes') loadQrcodes();
+    }
+
+    // 加载订单
+    async function loadOrders() {
+      const res = await fetch('/api/admin/orders');
+      const orders = await res.json();
+      
+      // 统计
+      const total = orders.length;
+      const paid = orders.filter(o => o.status === 'paid').length;
+      const pending = total - paid;
+      
+      document.getElementById('stats').innerHTML = `
+        <div class="stat-card">
+          <h3>${total}</h3>
+          <p>总订单</p>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #55efc4 0%, #00b894 100%);">
+          <h3>${paid}</h3>
+          <p>已支付</p>
+        </div>
+        <div class="stat-card" style="background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);">
+          <h3>${pending}</h3>
+          <p>待支付</p>
+        </div>
+      `;
+      
+      // 表格
+      const statusMap = {
+        'pending': '⏳ 待支付',
+        'paid': '✅ 已支付',
+        'shipped': '🚚 已发货',
+        'delivered': '📦 已送达'
+      };
+      
+      const tbody = document.getElementById('ordersTable');
+      tbody.innerHTML = orders.map(o => `
+        <tr>
+          <td>${o.id}</td>
+          <td>${o.customer_name}</td>
+          <td>${o.customer_phone}</td>
+          <td>${o.customer_address.substring(0, 30)}${o.customer_address.length > 30 ? '...' : ''}</td>
+          <td>
+            <span class="status ${o.status}">${statusMap[o.status] || o.status}</span>
+            ${o.shipping_company ? `<div class="shipping-info">${o.shipping_company}: ${o.tracking_number}</div>` : ''}
+          </td>
+          <td>${new Date(o.created_at).toLocaleString('zh-CN')}</td>
+          <td>
+            <div class="action-btns">
+              ${o.status === 'paid' ? `<button class="btn btn-success btn-sm" onclick="openShipModal('${o.id}')">🚚 发货</button>` : ''}
+              ${o.status === 'shipped' ? `<button class="btn btn-warning btn-sm" onclick="markDelivered('${o.id}')">📦 送达</button>` : ''}
+              ${o.status === 'pending' ? `<button class="btn btn-primary btn-sm" onclick="markPaid('${o.id}')">✅ 确认支付</button>` : ''}
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // 导出订单
+    function exportOrders() {
+      window.open('/api/admin/orders/export', '_blank');
+    }
+
+    // 加载收款码
+    async function loadQrcodes() {
+      const res = await fetch('/api/qrcodes');
+      const qrcodes = await res.json();
+      
+      const list = document.getElementById('qrList');
+      list.innerHTML = qrcodes.map(qr => `
+        <div class="qr-item">
+          <button class="delete-btn" onclick="deleteQr(${qr.id})">×</button>
+          <img src="/uploads/${qr.filename}" alt="收款码">
+          <p style="margin-top: 10px; font-size: 12px; color: #999;">${new Date(qr.upload_time).toLocaleString('zh-CN')}</p>
+        </div>
+      `).join('');
+    }
+
+    // 删除收款码
+    async function deleteQr(id) {
+      if (!confirm('确定删除这个收款码吗？')) return;
+      
+      await fetch(`/api/qrcodes/${id}`, { method: 'DELETE' });
+      loadQrcodes();
+    }
+
+    // 上传收款码
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) uploadFile(files[0]);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) uploadFile(e.target.files[0]);
+    });
+
+    async function uploadFile(file) {
+      const formData = new FormData();
+      formData.append('qrcode', file);
+      
+      const res = await fetch('/api/qrcodes', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+        alert('上传成功！');
+        loadQrcodes();
+      } else {
+        alert('上传失败：' + data.error);
+      }
+    }
+
+    // 页面加载时加载订单
+    loadOrders();
+  </script>
+</body>
+</html>

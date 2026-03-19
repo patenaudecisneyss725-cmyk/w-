@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>订单查询 - 发卡商城</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      background: #f5f5f5; 
+      min-height: 100vh;
+    }
+    .header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 18px; }
+    .header a { color: white; text-decoration: none; font-size: 14px; }
+    
+    .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+    
+    /* 查询表单 */
+    .query-section {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .query-title {
+      font-size: 18px;
+      color: #1a1a2e;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .query-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .query-tab {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid #eee;
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .query-tab.active {
+      border-color: #e94560;
+      background: #fff5f7;
+      color: #e94560;
+      font-weight: 600;
+    }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { 
+      display: block; 
+      color: #333; 
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #e94560;
+    }
+    .btn-query {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #e94560 0%, #d63850 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    /* 结果 */
+    .result-section {
+      margin-top: 20px;
+      display: none;
+    }
+    .result-section.show { display: block; }
+    
+    .order-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+      margin-bottom: 15px;
+    }
+    .order-number { font-weight: 600; color: #1a1a2e; }
+    .order-status {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-paid { background: #cce5ff; color: #004085; }
+    .status-shipped { background: #d4edda; color: #155724; }
+    .status-delivered { background: #d1ecf1; color: #0c5460; }
+    
+    .order-info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 14px;
+    }
+    .order-info-row .label { color: #666; }
+    .order-info-row .value { color: #333; font-weight: 500; }
+    
+    .amount {
+      font-size: 24px;
+      font-weight: 700;
+      color: #e94560;
+      text-align: right;
+      padding: 15px 0;
+      border-top: 1px solid #eee;
+      margin-top: 10px;
+    }
+    
+    /* 物流信息 */
+    .shipping-info {
+      background: #f8f9fa;
+      border-radius: 10px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+    .shipping-info h4 {
+      color: #1a1a2e;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    .shipping-info .info-row {
+      display: flex;
+      gap: 10px;
+      padding: 5px 0;
+      font-size: 13px;
+      color: #555;
+    }
+    
+    /* 空状态 */
+    .empty-result {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+    }
+    .empty-result svg {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 15px;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>🔍 订单查询</h1>
+    <a href="index.html">返回首页</a>
+  </header>
+  
+  <div class="container">
+    <!-- 查询表单 -->
+    <div class="query-section">
+      <div class="query-title">查询您的订单</div>
+      
+      <div class="query-tabs">
+        <div class="query-tab active" onclick="switchQueryType('orderId')">📋 订单号</div>
+        <div class="query-tab" onclick="switchQueryType('phone')">📱 手机号</div>
+      </div>
+      
+      <div class="form-group" id="orderIdInput">
+        <label>请输入订单号</label>
+        <input type="text" id="queryOrderId" placeholder="例如: ABC123456789">
+      </div>
+      
+      <div class="form-group" id="phoneInput" style="display: none;">
+        <label>请输入手机号码</label>
+        <input type="tel" id="queryPhone" placeholder="请输入手机号码">
+      </div>
+      
+      <button class="btn-query" onclick="doQuery()">查询</button>
+    </div>
+    
+    <!-- 查询结果 -->
+    <div class="result-section" id="resultSection">
+      <div class="order-card" id="orderCard">
+        <!-- 动态填充 -->
+      </div>
+    </div>
+    
+    <!-- 空结果 -->
+    <div class="empty-result" id="emptyResult" style="display: none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="m21 21-4.35-4.35"></path>
+      </svg>
+      <p>未找到相关订单</p>
+      <p style="font-size: 13px; margin-top: 5px;">请检查输入的信息是否正确</p>
+    </div>
+  </div>
+
+  <script>
+    let queryType = 'orderId';
+    
+    // URL参数预填
+    const urlOrderId = new URLSearchParams(location.search).get('orderId');
+    if (urlOrderId) {
+      document.getElementById('queryOrderId').value = urlOrderId;
+      doQuery();
+    }
+    
+    function switchQueryType(type) {
+      queryType = type;
+      document.querySelectorAll('.query-tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      document.getElementById('orderIdInput').style.display = type === 'orderId' ? 'block' : 'none';
+      document.getElementById('phoneInput').style.display = type === 'phone' ? 'block' : 'none';
+    }
+    
+    async function doQuery() {
+      let orderId = '';
+      let phone = '';
+      
+      if (queryType === 'orderId') {
+        orderId = document.getElementById('queryOrderId').value.trim();
+        if (!orderId) { alert('请输入订单号'); return; }
+      } else {
+        phone = document.getElementById('queryPhone').value.trim();
+        if (!phone) { alert('请输入手机号码'); return; }
+        if (!/^1[3-9]\d{9}$/.test(phone)) { alert('请输入正确的手机号码'); return; }
+      }
+      
+      try {
+        let url = '/api/orders/query?';
+        if (queryType === 'orderId') {
+          url += 'orderId=' + encodeURIComponent(orderId);
+        } else {
+          url += 'phone=' + encodeURIComponent(phone);
+        }
+        
+        const res = await fetch(url);
+        const orders = await res.json();
+        
+        document.getElementById('resultSection').style.display = 'none';
+        document.getElementById('emptyResult').style.display = 'none';
+        
+        if (!orders || orders.length === 0) {
+          document.getElementById('emptyResult').style.display = 'block';
+          return;
+        }
+        
+        // 显示最新的订单
+        const order = orders[0];
+        renderOrder(order);
+        document.getElementById('resultSection').classList.add('show');
+        
+      } catch (e) {
+        console.error('查询失败', e);
+        alert('查询失败，请稍后重试');
+      }
+    }
+    
+    function renderOrder(order) {
+      const statusMap = {
+        'pending': { text: '待支付', class: 'status-pending' },
+        'paid': { text: '已支付', class: 'status-paid' },
+        'shipped': { text: '已发货', class: 'status-shipped' },
+        'delivered': { text: '已完成', class: 'status-delivered' }
+      };
+      
+      const status = statusMap[order.status] || statusMap.pending;
+      
+      let shippingHtml = '';
+      if (order.status === 'shipped' || order.status === 'delivered') {
+        shippingHtml = `
+          <div class="shipping-info">
+            <h4>🚚 物流信息</h4>
+            <div class="info-row">
+              <span>快递公司：</span>
+              <span>${order.shipping_company || '-'}</span>
+            </div>
+            <div class="info-row">
+              <span>快递单号：</span>
+              <span>${order.tracking_number || '-'}</span>
+            </div>
+            ${order.shipped_at ? `
+            <div class="info-row">
+              <span>发货时间：</span>
+              <span>${new Date(order.shipped_at).toLocaleString('zh-CN')}</span>
+            </div>
+            ` : ''}
+          </div>
+        `;
+      }
+      
+      const card = document.getElementById('orderCard');
+      card.innerHTML = `
+        <div class="order-header">
+          <span class="order-number">订单号：${order.id}</span>
+          <span class="order-status ${status.class}">${status.text}</span>
+        </div>
+        
+        <div class="order-info-row">
+          <span class="label">收货人</span>
+          <span class="value">${order.customer_name}</span>
+        </div>
+        <div class="order-info-row">
+          <span class="label">手机号码</span>
+          <span class="value">${order.customer_phone}</span>
+        </div>
+        <div class="order-info-row">
+          <span class="label">收货地址</span>
+          <span class="value">${order.customer_address}</span>
+        </div>
+        <div class="order-info-row">
+          <span class="label">下单时间</span>
+          <span class="value">${new Date(order.created_at).toLocaleString('zh-CN')}</span>
+        </div>
+        
+        ${shippingHtml}
+        
+        <div class="amount">¥${order.total_amount || order.amount || 0}</div>
+      `;
+    }
+  </script>
+</body>
+</html>

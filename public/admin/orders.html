@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>订单管理 - 发卡商城后台</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      background: #f5f6fa;
+      min-height: 100vh;
+    }
+    
+    /* 头部 */
+    .header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      padding: 15px 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 20px; }
+    .header-right { display: flex; gap: 15px; align-items: center; }
+    .header a { color: white; text-decoration: none; font-size: 14px; }
+    .logout-btn {
+      background: #e94560;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    
+    /* 导航 */
+    .nav {
+      background: white;
+      padding: 0 25px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .nav-list {
+      display: flex;
+      gap: 5px;
+      list-style: none;
+    }
+    .nav-item {
+      padding: 15px 20px;
+      cursor: pointer;
+      color: #666;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+    .nav-item:hover { color: #e94560; }
+    .nav-item.active {
+      color: #e94560;
+      border-bottom-color: #e94560;
+      font-weight: 600;
+    }
+    
+    /* 主内容 */
+    .container { max-width: 1200px; margin: 0 auto; padding: 25px; }
+    
+    /* 统计卡片 */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .stat-card h3 { font-size: 32px; color: #1a1a2e; }
+    .stat-card p { color: #666; font-size: 14px; margin-top: 5px; }
+    .stat-card.blue { background: linear-gradient(135deg, #74b9ff, #0984e3); }
+    .stat-card.blue h3, .stat-card.blue p { color: white; }
+    .stat-card.green { background: linear-gradient(135deg, #55efc4, #00b894); }
+    .stat-card.green h3, .stat-card.green p { color: white; }
+    
+    /* 操作栏 */
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .btn {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: #e94560; color: white; }
+    .btn-success { background: #00b894; color: white; }
+    .btn-warning { background: #fdcb6e; color: #333; }
+    .btn-danger { background: #ff7675; color: white; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    
+    /* 表格 */
+    .table-wrapper {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 14px 16px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f8f9fa;
+      color: #555;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    td { font-size: 14px; color: #333; }
+    tr:hover { background: #fafafa; }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 15px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status-pending { background: #fff3cd; color: #856404; }
+    .status-paid { background: #cce5ff; color: #004085; }
+    .status-shipped { background: #d4edda; color: #155724; }
+    .status-delivered { background: #d1ecf1; color: #0c5460; }
+    
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    
+    /* 弹窗 */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal.show { display: flex; }
+    .modal-content {
+      background: white;
+      border-radius: 16px;
+      padding: 25px;
+      width: 90%;
+      max-width: 450px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal-title {
+      font-size: 18px;
+      color: #1a1a2e;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #eee;
+    }
+    .modal-form .form-group {
+      margin-bottom: 15px;
+    }
+    .modal-form label {
+      display: block;
+      color: #333;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    .modal-form input, .modal-form select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .modal-actions .btn { flex: 1; }
+    
+    /* 支付凭证 */
+    .screenshot-thumb {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 2px solid #eee;
+    }
+    .screenshot-thumb:hover { border-color: #e94560; }
+    
+    /* 价格编辑 */
+    .price-display {
+      cursor: pointer;
+      color: #e94560;
+      font-weight: 600;
+    }
+    .price-display:hover {
+      text-decoration: underline;
+    }
+    
+    /* 大图预览 */
+    .preview-modal img {
+      max-width: 100%;
+      max-height: 70vh;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>🔧 发卡商城后台</h1>
+    <div class="header-right">
+      <a href="orders.html">订单管理</a>
+      <a href="products.html">商品管理</a>
+      <a href="qrcodes.html">二维码管理</a>
+      <a href="settings.html">系统设置</a>
+      <span class="logout-btn" onclick="logout()">退出</span>
+    </div>
+  </header>
+  
+  <nav class="nav">
+    <ul class="nav-list">
+      <li class="nav-item" onclick="location.href='orders.html'">📦 订单管理</li>
+      <li class="nav-item" onclick="location.href='products.html'">🛍️ 商品管理</li>
+      <li class="nav-item" onclick="location.href='qrcodes.html'">💰 二维码管理</li>
+      <li class="nav-item" onclick="location.href='settings.html'">⚙️ 系统设置</li>
+    </ul>
+  </nav>
+  
+  <div class="container">
+    <!-- 统计 -->
+    <div class="stats" id="stats">
+      <div class="stat-card"><h3>0</h3><p>总订单</p></div>
+      <div class="stat-card blue"><h3>0</h3><p>待支付</p></div>
+      <div class="stat-card blue"><h3>0</h3><p>已支付</p></div>
+      <div class="stat-card green"><h3>0</h3><p>已发货</p></div>
+    </div>
+    
+    <!-- 操作栏 -->
+    <div class="toolbar">
+      <h3 style="color:#1a1a2e;">订单列表</h3>
+      <button class="btn btn-primary" onclick="exportOrders()">📥 导出CSV</button>
+    </div>
+    
+    <!-- 表格 -->
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>订单号</th>
+            <th>商品</th>
+            <th>收货人/电话/地址</th>
+            <th>金额</th>
+            <th>支付方式</th>
+            <th>支付凭证</th>
+            <th>状态</th>
+            <th>备注</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="ordersTable">
+          <tr><td colspan="9" style="text-align:center;color:#999;">加载中...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <!-- 发货弹窗 -->
+  <div class="modal" id="shipModal">
+    <div class="modal-content">
+      <h3 class="modal-title">🚚 填写物流信息</h3>
+      <div class="modal-form">
+        <div class="form-group">
+          <label>快递公司</label>
+          <select id="shippingCompany">
+            <option value="">请选择</option>
+            <option value="顺丰">顺丰</option>
+            <option value="中通">中通</option>
+            <option value="圆通">圆通</option>
+            <option value="申通">申通</option>
+            <option value="韵达">韵达</option>
+            <option value="邮政">邮政</option>
+            <option value="京东">京东</option>
+            <option value="极兔">极兔</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>快递单号</label>
+          <input type="text" id="trackingNumber" placeholder="请输入快递单号">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-success" onclick="confirmShip()">确认发货</button>
+        <button class="btn btn-danger" onclick="closeModal('shipModal')">取消</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 凭证预览弹窗 -->
+  <div class="modal preview-modal" id="previewModal">
+    <div class="modal-content">
+      <h3 class="modal-title">📱 支付凭证</h3>
+      <img id="previewImg" src="" alt="支付凭证">
+      <div class="modal-actions">
+        <button class="btn btn-danger" onclick="closeModal('previewModal')">关闭</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 修改价格弹窗 -->
+  <div class="modal" id="priceModal">
+    <div class="modal-content">
+      <h3 class="modal-title">💰 修改订单金额</h3>
+      <div class="modal-form">
+        <div class="form-group">
+          <label>订单号</label>
+          <input type="text" id="priceOrderId" readonly style="background:#f5f5f5;">
+        </div>
+        <div class="form-group">
+          <label>当前金额 (¥)</label>
+          <input type="text" id="currentPrice" readonly style="background:#f5f5f5;">
+        </div>
+        <div class="form-group">
+          <label>新金额 (¥) *</label>
+          <input type="number" id="newPrice" placeholder="请输入新金额" step="0.01">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="confirmPrice()">确认修改</button>
+        <button class="btn btn-danger" onclick="closeModal('priceModal')">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentOrderId = '';
+    let ordersData = [];
+    
+    // 检查登录
+    function checkAuth() {
+      const token = localStorage.getItem('admin_token');
+      if (!token) {
+        location.href = 'login.html';
+        return;
+      }
+    }
+    
+    // 加载订单
+    async function loadOrders() {
+      try {
+        const res = await fetch('/api/admin/orders');
+        ordersData = await res.json();
+        renderOrders();
+        updateStats();
+      } catch (e) {
+        console.error('加载失败', e);
+      }
+    }
+    
+    function renderOrders() {
+      const tbody = document.getElementById('ordersTable');
+      
+      if (ordersData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;">暂无订单</td></tr>';
+        return;
+      }
+      
+      const statusMap = {
+        'pending': { text: '待支付', class: 'status-pending' },
+        'paid': { text: '已支付', class: 'status-paid' },
+        'shipped': { text: '已发货', class: 'status-shipped' },
+        'delivered': { text: '已完成', class: 'status-delivered' }
+      };
+      
+      const paymentMethodMap = {
+        'wechat': '微信',
+        'alipay': '支付宝',
+        'usdt': 'USDT'
+      };
+      
+      tbody.innerHTML = ordersData.map(o => {
+        const status = statusMap[o.status] || statusMap.pending;
+        const products = o.products ? o.products.map(p => `${p.name}x${p.quantity}`).join(', ') : '-';
+        const payMethod = paymentMethodMap[o.payment_method] || '-';
+        
+        return `
+          <tr>
+            <td>
+              <strong>${o.id}</strong><br>
+              <small style="color:#999">${new Date(o.created_at).toLocaleString('zh-CN')}</small>
+            </td>
+            <td>${products}</td>
+            <td>
+              <strong>${o.customer_name}</strong><br>
+              <small>${o.customer_phone}</small><br>
+              <small style="color:#666">${o.customer_address || '-'}</small>
+            </td>
+            <td><span class="price-display" onclick="openPriceModal('${o.id}', '${o.total_amount || o.amount || 0}')">¥${o.total_amount || o.amount || 0}</span></td>
+            <td>${payMethod}</td>
+            <td>
+              ${o.payment_screenshot 
+                ? `<img src="${o.payment_screenshot}" class="screenshot-thumb" onclick="viewScreenshot('${o.payment_screenshot}')">` 
+                : '<span style="color:#999">无</span>'}
+            </td>
+            <td><span class="status-badge ${status.class}">${status.text}</span></td>
+            <td>
+              <input type="text" placeholder="备注" value="${o.note || ''}" 
+                style="width:80px;padding:4px;border:1px solid #ddd;border-radius:4px;font-size:12px;"
+                onchange="saveNote('${o.id}', this.value)">
+              ${o.note ? '<br><small style="color:#999">📝</small>' : ''}
+            </td>
+            <td class="actions">
+              ${o.status === 'pending' 
+                ? `<button class="btn btn-success btn-sm" onclick="markPaid('${o.id}')">确认支付</button>` 
+                : ''}
+              ${o.status === 'paid' 
+                ? `<button class="btn btn-primary btn-sm" onclick="openShipModal('${o.id}')">发货</button>` 
+                : ''}
+              ${o.status === 'shipped' 
+                ? `<button class="btn btn-warning btn-sm" onclick="markDelivered('${o.id}')">送达</button>` 
+                : ''}
+              <button class="btn btn-danger btn-sm" onclick="deleteOrder('${o.id}')">删除</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+    
+    function updateStats() {
+      const total = ordersData.length;
+      const pending = ordersData.filter(o => o.status === 'pending').length;
+      const paid = ordersData.filter(o => o.status === 'paid').length;
+      const shipped = ordersData.filter(o => o.status === 'shipped' || o.status === 'delivered').length;
+      
+      document.getElementById('stats').innerHTML = `
+        <div class="stat-card"><h3>${total}</h3><p>总订单</p></div>
+        <div class="stat-card blue"><h3>${pending}</h3><p>待支付</p></div>
+        <div class="stat-card blue"><h3>${paid}</h3><p>已支付</p></div>
+        <div class="stat-card green"><h3>${shipped}</h3><p>已发货</p></div>
+      `;
+    }
+    
+    // 操作
+    async function markPaid(orderId) {
+      if (!confirm('确认该订单已支付？')) return;
+      
+      try {
+        const res = await fetch('/api/admin/orders/' + orderId + '/confirm', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          alert('已确认支付');
+          loadOrders();
+        }
+      } catch (e) {
+        alert('操作失败');
+      }
+    }
+    
+    function openShipModal(orderId) {
+      currentOrderId = orderId;
+      document.getElementById('shipModal').classList.add('show');
+    }
+    
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('show');
+    }
+    
+    async function confirmShip() {
+      const company = document.getElementById('shippingCompany').value;
+      const number = document.getElementById('trackingNumber').value;
+      
+      if (!company || !number) {
+        alert('请填写快递公司和单号');
+        return;
+      }
+      
+      try {
+        const res = await fetch('/api/admin/orders/' + currentOrderId + '/ship', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ shipping_company: company, tracking_number: number })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('发货成功');
+          closeModal('shipModal');
+          document.getElementById('shippingCompany').value = '';
+          document.getElementById('trackingNumber').value = '';
+          loadOrders();
+        }
+      } catch (e) {
+        alert('操作失败');
+      }
+    }
+    
+    async function markDelivered(orderId) {
+      try {
+        const res = await fetch('/api/admin/orders/' + orderId + '/delivered', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          alert('已标记为送达');
+          loadOrders();
+        }
+      } catch (e) {
+        alert('操作失败');
+      }
+    }
+    
+    // 修改价格
+    function openPriceModal(orderId, currentAmount) {
+      currentOrderId = orderId;
+      document.getElementById('priceOrderId').value = orderId;
+      document.getElementById('currentPrice').value = currentAmount;
+      document.getElementById('newPrice').value = '';
+      document.getElementById('priceModal').classList.add('show');
+    }
+    
+    async function confirmPrice() {
+      const newPrice = document.getElementById('newPrice').value.trim();
+      
+      if (!newPrice || isNaN(newPrice) || parseFloat(newPrice) < 0) {
+        alert('请输入有效的金额');
+        return;
+      }
+      
+      try {
+        const res = await fetch('/api/admin/orders/' + currentOrderId + '/price', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: parseFloat(newPrice) })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('价格修改成功');
+          closeModal('priceModal');
+          loadOrders();
+        } else {
+          alert(data.error || '修改失败');
+        }
+      } catch (e) {
+        alert('操作失败');
+      }
+    }
+    
+    function viewScreenshot(src) {
+      document.getElementById('previewImg').src = src;
+      document.getElementById('previewModal').classList.add('show');
+    }
+    
+    function exportOrders() {
+      let csv = '订单号,商品,收货人,电话,地址,金额,状态,下单时间,备注\n';
+      ordersData.forEach(o => {
+        const products = o.products ? o.products.map(p => `${p.name}x${p.quantity}`).join(';') : '';
+        csv += `"${o.id}","${products}","${o.customer_name}","${o.customer_phone}","${o.customer_address}",${o.total_amount},${o.status},"${new Date(o.created_at).toLocaleString()}","${o.note || ''}"\n`;
+      });
+      
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'orders-' + new Date().toISOString().slice(0,10) + '.csv';
+      a.click();
+    }
+    
+    // 保存备注
+    async function saveNote(orderId, note) {
+      try {
+        const res = await fetch('/api/admin/orders/' + orderId + '/note', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ note })
+        });
+        const data = await res.json();
+        if (data.success) {
+          console.log('备注已保存');
+        }
+      } catch (e) {
+        console.error('保存备注失败', e);
+      }
+    }
+    
+    // 删除订单
+    async function deleteOrder(orderId) {
+      if (!confirm('确定要删除该订单吗？此操作不可恢复！')) return;
+      
+      try {
+        const res = await fetch('/api/admin/orders/' + orderId, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          alert('订单已删除');
+          loadOrders();
+        } else {
+          alert(data.error || '删除失败');
+        }
+      } catch (e) {
+        alert('删除失败');
+      }
+    }
+    
+    function logout() {
+      localStorage.removeItem('admin_token');
+      location.href = 'login.html';
+    }
+    
+    checkAuth();
+    loadOrders();
+  </script>
+</body>
+</html>

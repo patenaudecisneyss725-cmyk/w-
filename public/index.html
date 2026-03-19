@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>发卡商城 - 首页</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      background: #f5f5f5; 
+      min-height: 100vh;
+      padding-bottom: 20px;
+    }
+    .header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      padding: 15px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 18px; }
+    .header a { color: #e94560; text-decoration: none; font-size: 14px; }
+    
+    .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+    
+    /* ===== 大图网格模式 ===== */
+    .products-grid .product-card {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .products-grid .product-card:active { transform: scale(0.98); }
+    .products-grid .product-image { width: 100%; height: 200px; object-fit: cover; background: #eee; }
+    .products-grid .product-info { padding: 20px; }
+    .products-grid .product-name { font-size: 18px; font-weight: 600; color: #1a1a2e; margin-bottom: 8px; }
+    .products-grid .product-desc { color: #666; font-size: 14px; line-height: 1.5; margin-bottom: 12px; }
+    .products-grid .product-price { font-size: 24px; font-weight: 700; color: #e94560; }
+    
+    /* ===== 小图网格模式 ===== */
+    .products-small { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .products-small .product-card {
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      cursor: pointer;
+    }
+    .products-small .product-image { width: 100%; height: 80px; object-fit: cover; background: #eee; }
+    .products-small .product-info { padding: 8px; }
+    .products-small .product-name { font-size: 12px; font-weight: 600; color: #1a1a2e; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .products-small .product-desc { display: none; }
+    .products-small .product-price { font-size: 14px; font-weight: 700; color: #e94560; }
+    
+    /* ===== 列表模式 ===== */
+    .products-list { display: flex; flex-direction: column; gap: 12px; }
+    .products-list .product-card {
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+    .products-list .product-image { width: 80px; height: 80px; object-fit: cover; background: #eee; flex-shrink: 0; }
+    .products-list .product-info { flex: 1; padding: 12px; display: flex; flex-direction: column; justify-content: center; }
+    .products-list .product-name { font-size: 15px; font-weight: 600; color: #1a1a2e; margin-bottom: 4px; }
+    .products-list .product-desc { font-size: 12px; color: #999; margin-bottom: 6px; }
+    .products-list .product-price { font-size: 16px; font-weight: 700; color: #e94560; }
+    
+    /* 选择商品 */
+    .select-product {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .select-product label { font-size: 14px; color: #333; }
+    .select-product select {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+      background: white;
+    }
+    
+    /* 表单 */
+    .form-section {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .form-section h3 { 
+      color: #1a1a2e; 
+      margin-bottom: 15px; 
+      font-size: 16px;
+    }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { 
+      display: block; 
+      color: #333; 
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    .form-group input, .form-group textarea {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    .form-group input:focus, .form-group textarea:focus {
+      outline: none;
+      border-color: #e94560;
+    }
+    .form-group textarea { resize: none; height: 80px; }
+    
+    /* 按钮 */
+    .btn-submit {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #e94560 0%, #d63850 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    
+    /* 提示 */
+    .tips {
+      background: #fffbe6;
+      border-radius: 8px;
+      padding: 12px 15px;
+      margin-top: 15px;
+      font-size: 13px;
+      color: #666;
+    }
+    
+    /* 底部 */
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: #999;
+      font-size: 13px;
+    }
+    
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>🎁 W小小小店</h1>
+    <a href="query.html">查询订单</a>
+  </header>
+  
+  <div class="container">
+    <!-- 商品列表 -->
+    <div class="products-list" id="productsList">
+      <div class="empty">加载商品中...</div>
+    </div>
+    
+    <!-- 订单表单 -->
+    <div class="form-section">
+      <h3>📝 填写收货信息</h3>
+      
+      <div class="select-product">
+        <label>选择商品：</label>
+        <select id="selectedProduct" onchange="updateSelectedProduct()">
+          <option value="">请选择商品</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>收货人姓名 *</label>
+        <input type="text" id="customerName" placeholder="请输入收货人姓名">
+      </div>
+      <div class="form-group">
+        <label>手机号码 *</label>
+        <input type="tel" id="customerPhone" placeholder="请输入手机号码">
+      </div>
+      <div class="form-group">
+        <label>收货地址 *</label>
+        <textarea id="customerAddress" placeholder="请输入详细收货地址"></textarea>
+      </div>
+      
+      <div class="tips">
+        💡 请仔细核对收货信息，商品将用包裹邮寄给你
+      </div>
+      
+      <button class="btn-submit" onclick="submitOrder()">提交订单</button>
+    </div>
+  </div>
+  
+  <div class="footer" id="footerText">
+    © 2026 发卡商城
+  </div>
+
+  <script>
+    let productsData = [];
+    
+    // 加载底部文案
+    async function loadFooterMessage() {
+      try {
+        const res = await fetch('/api/config/footer_message');
+        const data = await res.json();
+        if (data.message) {
+          document.getElementById('footerText').textContent = data.message;
+        }
+      } catch (e) {
+        console.log('加载底部文案失败');
+      }
+    }
+    
+    // 加载商品列表
+    async function loadProducts() {
+      try {
+        // 加载底部文案
+        await loadFooterMessage();
+        
+        // 先加载展示模式
+        await loadDisplayMode();
+        
+        const res = await fetch('/api/products');
+        const products = await res.json();
+        productsData = products;
+        renderProducts(products);
+      } catch (e) {
+        console.error('加载商品失败', e);
+        document.getElementById('productsList').innerHTML = '<div class="empty">加载失败，请刷新页面</div>';
+      }
+    }
+    
+    let displayMode = 'grid';
+    
+    // 加载展示模式
+    async function loadDisplayMode() {
+      try {
+        const res = await fetch('/api/config/display_mode');
+        const data = await res.json();
+        displayMode = data.mode || 'grid';
+      } catch (e) {
+        console.log('使用默认展示模式');
+      }
+    }
+    
+    // 渲染商品列表
+    function renderProducts(products) {
+      const listContainer = document.getElementById('productsList');
+      const selectContainer = document.getElementById('selectedProduct');
+      
+      if (!products || products.length === 0) {
+        listContainer.innerHTML = '<div class="empty">暂无商品</div>';
+        return;
+      }
+      
+      // 设置容器类名
+      listContainer.className = 'products-' + displayMode;
+      
+      // 根据模式渲染
+      if (displayMode === 'small') {
+        // 小图模式
+        listContainer.innerHTML = products.map(p => `
+          <div class="product-card" onclick="selectProduct('${p.id}')">
+            <img src="${p.images && p.images[0] ? p.images[0] : '/uploads/product.jpg'}" alt="${p.name}" class="product-image">
+            <div class="product-info">
+              <div class="product-name">${p.name}</div>
+              <div class="product-price">¥${p.price}</div>
+            </div>
+          </div>
+        `).join('');
+      } else if (displayMode === 'list') {
+        // 列表模式
+        listContainer.innerHTML = products.map(p => `
+          <div class="product-card" onclick="selectProduct('${p.id}')">
+            <img src="${p.images && p.images[0] ? p.images[0] : '/uploads/product.jpg'}" alt="${p.name}" class="product-image">
+            <div class="product-info">
+              <div class="product-name">${p.name}</div>
+              <div class="product-desc">${p.description || '优质商品'}</div>
+              <div class="product-price">¥${p.price}</div>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        // 大图模式（默认）
+        listContainer.innerHTML = products.map(p => `
+          <div class="product-card" onclick="selectProduct('${p.id}')">
+            <img src="${p.images && p.images[0] ? p.images[0] : '/uploads/product.jpg'}" alt="${p.name}" class="product-image">
+            <div class="product-info">
+              <div class="product-name">${p.name}</div>
+              <div class="product-desc">${p.description || '优质商品'}</div>
+              <div class="product-price">¥<span>${p.price}</span></div>
+            </div>
+          </div>
+        `).join('');
+      }
+      
+      // 下拉选择
+      selectContainer.innerHTML = '<option value="">请选择商品</option>' + 
+        products.map(p => `<option value="${p.id}" data-price="${p.price}">${p.name} - ¥${p.price}</option>`).join('');
+    }
+    
+    // 点击商品卡片选择
+    function selectProduct(productId) {
+      document.getElementById('selectedProduct').value = productId;
+      document.getElementById('selectedProduct').scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    // 更新选中的商品
+    function updateSelectedProduct() {
+      const select = document.getElementById('selectedProduct');
+      const selectedOption = select.options[select.selectedIndex];
+      if (selectedOption && selectedOption.value) {
+        // 滚动到表单
+      }
+    }
+    
+    // 提交订单
+    async function submitOrder() {
+      const productId = document.getElementById('selectedProduct').value;
+      const customer_name = document.getElementById('customerName').value.trim();
+      const customer_phone = document.getElementById('customerPhone').value.trim();
+      const customer_address = document.getElementById('customerAddress').value.trim();
+      
+      // 验证
+      if (!productId) { alert('请选择商品'); return; }
+      if (!customer_name) { alert('请填写收货人姓名'); return; }
+      if (!customer_phone) { alert('请填写手机号码'); return; }
+      if (!/^1[3-9]\d{9}$/.test(customer_phone)) { alert('请填写正确的手机号码'); return; }
+      if (!customer_address) { alert('请填写收货地址'); return; }
+      
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            product_id: productId,
+            customer_name, 
+            customer_phone, 
+            customer_address 
+          })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          // 跳转到支付方式选择页
+          location.href = 'select-payment.html?orderId=' + data.order.id;
+        } else {
+          alert(data.error || '创建订单失败，请稍后重试');
+        }
+      } catch (e) {
+        alert('网络错误，请稍后重试');
+      }
+    }
+    
+    loadProducts();
+  </script>
+</body>
+</html>
